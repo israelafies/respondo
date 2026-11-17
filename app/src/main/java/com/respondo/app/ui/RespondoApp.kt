@@ -39,12 +39,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.respondo.ui.prospects.ProspectsScreen
 import com.respondo.ui.prospects.ProspectViewModel
+import com.respondo.ui.offers.OfferProfileViewModel
+import com.respondo.ui.offers.OfferProfilesScreen
 
 private data class Destination(val name: String, val symbol: String)
 
 private val destinations = listOf(
     Destination("Dashboard", "⌂"),
     Destination("Prospects", "◎"),
+    Destination("Offers", "✦"),
     Destination("Conversations", "▤"),
     Destination("Campaigns", "↗"),
     Destination("Settings", "⚙"),
@@ -56,6 +59,7 @@ fun RespondoApp() {
     var openAddProspectOnEntry by rememberSaveable { mutableStateOf(false) }
     val prospectViewModel: ProspectViewModel = viewModel()
     val prospectState by prospectViewModel.uiState.collectAsState()
+    val offerViewModel: OfferProfileViewModel = viewModel()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -98,6 +102,7 @@ fun RespondoApp() {
                     viewModel = prospectViewModel,
                     initiallyAdding = openAddProspectOnEntry,
                 )
+                "Offers" -> OfferProfilesScreen(modifier = Modifier.weight(1f), viewModel = offerViewModel)
                 else -> FeaturePlaceholder(selected)
             }
         }
