@@ -53,6 +53,7 @@ private val destinations = listOf(
 @Composable
 fun RespondoApp() {
     var selected by rememberSaveable { mutableStateOf("Dashboard") }
+    var openAddProspectOnEntry by rememberSaveable { mutableStateOf(false) }
     val prospectViewModel: ProspectViewModel = viewModel()
     val prospectState by prospectViewModel.uiState.collectAsState()
 
@@ -63,7 +64,10 @@ fun RespondoApp() {
                 destinations.forEach { destination ->
                     NavigationBarItem(
                         selected = selected == destination.name,
-                        onClick = { selected = destination.name },
+                        onClick = {
+                            selected = destination.name
+                            openAddProspectOnEntry = false
+                        },
                         icon = { Text(destination.symbol, fontSize = 20.sp) },
                         label = { Text(destination.name, fontSize = 10.sp, maxLines = 1) },
                         colors = NavigationBarItemDefaults.colors(
@@ -85,8 +89,15 @@ fun RespondoApp() {
             BrandHeader()
             Spacer(Modifier.height(34.dp))
             when (selected) {
-                "Dashboard" -> DashboardContent(prospectCount = prospectState.totalCount, onAddProspect = { selected = "Prospects" })
-                "Prospects" -> ProspectsScreen(Modifier.weight(1f), prospectViewModel)
+                "Dashboard" -> DashboardContent(prospectCount = prospectState.totalCount, onAddProspect = {
+                    openAddProspectOnEntry = true
+                    selected = "Prospects"
+                })
+                "Prospects" -> ProspectsScreen(
+                    modifier = Modifier.weight(1f),
+                    viewModel = prospectViewModel,
+                    initiallyAdding = openAddProspectOnEntry,
+                )
                 else -> FeaturePlaceholder(selected)
             }
         }

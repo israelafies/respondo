@@ -47,10 +47,14 @@ import androidx.compose.ui.unit.sp
 import com.respondo.data.prospects.Prospect
 
 @Composable
-fun ProspectsScreen(modifier: Modifier = Modifier, viewModel: ProspectViewModel) {
+fun ProspectsScreen(
+    modifier: Modifier = Modifier,
+    viewModel: ProspectViewModel,
+    initiallyAdding: Boolean = false,
+) {
     val state by viewModel.uiState.collectAsState()
     var editing by remember { mutableStateOf<Prospect?>(null) }
-    var adding by rememberSaveable { mutableStateOf(false) }
+    var adding by rememberSaveable(initiallyAdding) { mutableStateOf(initiallyAdding) }
     var selected by remember { mutableStateOf<Prospect?>(null) }
     var deleting by remember { mutableStateOf<Prospect?>(null) }
 
