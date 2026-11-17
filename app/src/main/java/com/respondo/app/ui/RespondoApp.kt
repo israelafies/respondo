@@ -47,7 +47,7 @@ private data class Destination(val name: String, val symbol: String)
 private val destinations = listOf(
     Destination("Dashboard", "⌂"),
     Destination("Prospects", "◎"),
-    Destination("Offers", "✦"),
+    Destination("Offer Profiles", "◇"),
     Destination("Conversations", "▤"),
     Destination("Campaigns", "↗"),
     Destination("Settings", "⚙"),
@@ -102,7 +102,7 @@ fun RespondoApp() {
                     viewModel = prospectViewModel,
                     initiallyAdding = openAddProspectOnEntry,
                 )
-                "Offers" -> OfferProfilesScreen(modifier = Modifier.weight(1f), viewModel = offerViewModel)
+                "Offer Profiles" -> OfferProfilesScreen(modifier = Modifier.weight(1f), viewModel = offerViewModel)
                 else -> FeaturePlaceholder(selected)
             }
         }
