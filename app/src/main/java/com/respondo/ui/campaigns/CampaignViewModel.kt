@@ -22,7 +22,7 @@ class CampaignViewModel(application: Application) : AndroidViewModel(application
 
     fun members(id: Long) = repository.observeMembers(id)
     fun stats(id: Long) = repository.observeStats(id)
-    fun prospect(id: Long) = repository.prospect(id)
+    suspend fun prospect(id: Long) = repository.prospect(id)
     fun save(campaign: Campaign, done: () -> Unit) {
         CampaignValidation.error(campaign.name)?.let { return }
         viewModelScope.launch { runCatching { if (campaign.id == 0L) repository.add(campaign) else repository.update(campaign) }.onSuccess { done() } }
