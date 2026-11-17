@@ -41,6 +41,8 @@ import com.respondo.ui.prospects.ProspectsScreen
 import com.respondo.ui.prospects.ProspectViewModel
 import com.respondo.ui.offers.OfferProfileViewModel
 import com.respondo.ui.offers.OfferProfilesScreen
+import com.respondo.ui.campaigns.CampaignViewModel
+import com.respondo.ui.campaigns.CampaignsScreen
 
 private data class Destination(val name: String, val symbol: String)
 
@@ -60,6 +62,7 @@ fun RespondoApp() {
     val prospectViewModel: ProspectViewModel = viewModel()
     val prospectState by prospectViewModel.uiState.collectAsState()
     val offerViewModel: OfferProfileViewModel = viewModel()
+    val campaignViewModel: CampaignViewModel = viewModel()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -103,6 +106,7 @@ fun RespondoApp() {
                     initiallyAdding = openAddProspectOnEntry,
                 )
                 "Offer Profiles" -> OfferProfilesScreen(modifier = Modifier.weight(1f), viewModel = offerViewModel)
+                "Campaigns" -> CampaignsScreen(modifier = Modifier.weight(1f), viewModel = campaignViewModel)
                 else -> FeaturePlaceholder(selected)
             }
         }
