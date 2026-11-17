@@ -24,10 +24,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +37,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.respondo.ui.prospects.ProspectsScreen
+import com.respondo.ui.prospects.ProspectViewModel
 
 private data class Destination(val name: String, val symbol: String)
 
@@ -49,6 +53,8 @@ private val destinations = listOf(
 @Composable
 fun RespondoApp() {
     var selected by rememberSaveable { mutableStateOf("Dashboard") }
+    val prospectViewModel: ProspectViewModel = viewModel()
+    val prospectState by prospectViewModel.uiState.collectAsState()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -78,7 +84,11 @@ fun RespondoApp() {
             Spacer(Modifier.height(20.dp))
             BrandHeader()
             Spacer(Modifier.height(34.dp))
-            if (selected == "Dashboard") DashboardContent() else FeaturePlaceholder(selected)
+            when (selected) {
+                "Dashboard" -> DashboardContent(prospectCount = prospectState.totalCount, onAddProspect = { selected = "Prospects" })
+                "Prospects" -> ProspectsScreen(Modifier.weight(1f), prospectViewModel)
+                else -> FeaturePlaceholder(selected)
+            }
         }
     }
 }
@@ -105,7 +115,7 @@ private fun BrandHeader() {
 }
 
 @Composable
-private fun DashboardContent() {
+private fun DashboardContent(prospectCount: Int, onAddProspect: () -> Unit) {
     Text("YOUR SALES WORKSPACE", fontSize = 11.sp, letterSpacing = 1.3.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Spacer(Modifier.height(9.dp))
     Text("Welcome to Respondo", fontSize = 29.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.8).sp)
@@ -125,7 +135,7 @@ private fun DashboardContent() {
             Spacer(Modifier.height(6.dp))
             Text("Add prospects to start building momentum.", color = Color(0xFF245846), fontSize = 13.sp)
             Spacer(Modifier.height(20.dp))
-            Text("＋   Add a prospect", color = Color(0xFF0B3225), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text("＋   Add a prospect", modifier = Modifier.clickable(onClick = onAddProspect), color = Color(0xFF0B3225), fontWeight = FontWeight.Bold, fontSize = 14.sp)
         }
     }
 
@@ -137,7 +147,7 @@ private fun DashboardContent() {
     }
     Spacer(Modifier.height(14.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-        MetricCard("Prospects", "0", "Ready to add", Modifier.weight(1f))
+        MetricCard("Prospects", prospectCount.toString(), if (prospectCount == 1) "In your workspace" else "Ready to connect", Modifier.weight(1f))
         MetricCard("Conversations", "0", "No activity yet", Modifier.weight(1f))
     }
     Spacer(Modifier.height(12.dp))
@@ -155,7 +165,7 @@ private fun DashboardContent() {
         Spacer(Modifier.width(12.dp))
         Column {
             Text("Your next step", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            Text("Add your first prospect to get started.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (prospectCount == 0) "Add your first prospect to get started." else "$prospectCount prospect${if (prospectCount == 1) "" else "s"} saved on this device.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

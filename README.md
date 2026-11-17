@@ -1,6 +1,6 @@
 # Respondo
 
-Respondo is a native Android sales workspace built with Kotlin and Jetpack Compose. This initial app provides a branded dashboard and navigation for Dashboard, Prospects, Conversations, Campaigns, and Settings. Feature areas are grouped under the app's `ui` package so they can be extracted into Gradle modules when they gain independent domain and data ownership.
+Respondo is a native Android sales workspace built with Kotlin and Jetpack Compose. The app provides a branded dashboard and navigation for Dashboard, Prospects, Conversations, Campaigns, and Settings. Prospects can be created, searched, viewed, edited, and deleted. Records are stored locally in SQLite through Room and remain available offline. A repository boundary allows future sync storage to replace the local implementation without changing the UI.
 
 ## Build
 
@@ -21,6 +21,8 @@ app/
   src/main/java/com/respondo/app/
     MainActivity.kt             # Android entry point / composition root
     ui/RespondoApp.kt           # Home dashboard and top-level navigation
+    ui/prospects/               # Prospect list, form, details, and ViewModel
+    data/prospects/             # Room entity, DAO, database, and repository
     ui/theme/RespondoTheme.kt   # App color scheme
   src/main/AndroidManifest.xml
 gradle/wrapper/                 # Pinned Gradle wrapper
