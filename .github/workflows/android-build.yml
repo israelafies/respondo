@@ -45,6 +45,7 @@ jobs:
           test -d "$ANDROID_HOME/build-tools/35.0.0" || { echo "::error::Android build-tools 35.0.0 are not installed."; exit 1; }
 
       - name: Compile, run unit tests, and assemble debug APK
+        timeout-minutes: 15
         run: ./gradlew --no-daemon :app:compileDebugSources :app:testDebugUnitTest :app:assembleDebug
 
       - name: Upload debug APK
