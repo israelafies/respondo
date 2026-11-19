@@ -1,8 +1,10 @@
 package com.respondo.data.cloud
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Dns
 import okhttp3.mockwebserver.MockResponse
@@ -10,6 +12,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -109,7 +112,10 @@ class CloudApiRepositoryTest {
             .setBodyDelay(5, TimeUnit.SECONDS)
             .setBody("""{"success":true,"data":{"status":"ok","service":"respondo-api","timestamp":"now","apiVersion":"1.0.0"},"error":null}"""))
         val request = launch { repository.checkBackendHealth() }
-        server.takeRequest()
+        val recordedRequest = withContext(Dispatchers.IO) {
+            server.takeRequest(2, TimeUnit.SECONDS)
+        }
+        assertNotNull("Expected the health request to reach MockWebServer", recordedRequest)
         request.cancelAndJoin()
         assertTrue(request.isCancelled)
     }
