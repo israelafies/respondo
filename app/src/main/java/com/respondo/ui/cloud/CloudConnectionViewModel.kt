@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 enum class CloudConnectionStatus { NOT_CONFIGURED, OFFLINE, CONNECTING, CONNECTED, SERVER_UNAVAILABLE }
@@ -28,7 +27,7 @@ class CloudConnectionViewModel(
 
     init {
         viewModelScope.launch {
-            connectivity.hasInternet.distinctUntilChanged().collectLatest { online ->
+            connectivity.hasInternet.collectLatest { online ->
                 if (!configured) {
                     mutableState.value = CloudConnectionState(CloudConnectionStatus.NOT_CONFIGURED)
                 } else if (!online) {
