@@ -2,8 +2,10 @@ package com.respondo.data.cloud
 
 import com.google.gson.JsonParseException
 import com.google.gson.JsonParser
+import com.google.gson.stream.MalformedJsonException
 import kotlinx.coroutines.CancellationException
 import retrofit2.Response
+import java.io.EOFException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -57,6 +59,10 @@ class RetrofitCloudApiRepository(
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: JsonParseException) {
+            CloudApiResult.InvalidResponse
+        } catch (_: MalformedJsonException) {
+            CloudApiResult.InvalidResponse
+        } catch (_: EOFException) {
             CloudApiResult.InvalidResponse
         } catch (timeout: SocketTimeoutException) {
             CloudApiResult.NetworkFailure(NetworkFailureKind.TIMEOUT)
