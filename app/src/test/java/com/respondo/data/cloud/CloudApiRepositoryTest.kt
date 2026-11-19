@@ -4,6 +4,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
+import okhttp3.Dns
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -15,6 +16,7 @@ import org.junit.Before
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 import java.net.UnknownHostException
 
@@ -88,7 +90,10 @@ class CloudApiRepositoryTest {
         val unreachable = Retrofit.Builder()
             .baseUrl("http://respondo.invalid/")
             .client(OkHttpClient.Builder()
-                .dns { throw UnknownHostException("test DNS failure") }
+                .dns(object : Dns {
+                    override fun lookup(hostname: String): List<InetAddress> =
+                        throw UnknownHostException("test DNS failure for $hostname")
+                })
                 .callTimeout(2, TimeUnit.SECONDS)
                 .build())
             .addConverterFactory(GsonConverterFactory.create())
