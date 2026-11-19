@@ -1,0 +1,46 @@
+name = "respondo-api"
+main = "src/index.ts"
+compatibility_date = "2026-11-18"
+
+[vars]
+ENVIRONMENT = "development"
+API_VERSION = "1.0.0"
+CORS_ALLOWED_ORIGINS = "http://localhost:3000"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "respondo-db"
+# Replace this explicit placeholder with the ID returned by `wrangler d1 create`.
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+[env.staging]
+name = "respondo-api-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+API_VERSION = "1.0.0"
+CORS_ALLOWED_ORIGINS = ""
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "respondo-db-staging"
+# Replace only after creating the staging D1 database.
+database_id = "REPLACE_WITH_STAGING_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+[env.production]
+name = "respondo-api"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+API_VERSION = "1.0.0"
+# Add exact production web origins here if browser clients are introduced.
+CORS_ALLOWED_ORIGINS = ""
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "respondo-db"
+# Replace only after creating the production D1 database.
+database_id = "REPLACE_WITH_PRODUCTION_D1_DATABASE_ID"
+migrations_dir = "migrations"

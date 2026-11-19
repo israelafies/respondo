@@ -1,0 +1,85 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Typecheck, test, and verify local Worker/D1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Run Worker tests
+        run: npm test
+
+      - name: Validate Wrangler configuration and generate binding types
+        run: mkdir -p .wrangler && npm run config:check
+
+      - name: Validate Worker bundle with Wrangler dry-run
+        run: npm run bundle:check
+
+      - name: Apply migration to local D1
+        run: npm run db:migrate:local
+
+      - name: Verify schema, indexes, foreign keys, and deletion in local D1
+        run: npm run db:verify:local
+
+      - name: Verify Worker database health against migrated local D1
+        shell: bash
+        run: |
+          ./node_modules/.bin/wrangler dev --ip 127.0.0.1 --port 8787 > "$RUNNER_TEMP/respondo-wrangler-dev.log" 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true; wait "$worker_pid" 2>/dev/null || true' EXIT
+
+          if ! node --input-type=module <<'NODE'
+          const endpoint = "http://127.0.0.1:8787/api/v1/system/database";
+          let response;
+          for (let attempt = 0; attempt < 30; attempt += 1) {
+            try {
+              response = await fetch(endpoint, { signal: AbortSignal.timeout(1500) });
+              break;
+            } catch {
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+          }
+          if (!response) throw new Error("Local Worker did not become ready within 30 seconds.");
+          const body = await response.json();
+          if (!response.ok || body.success !== true || body.data?.status !== "connected") {
+            throw new Error(`Database health endpoint failed: HTTP ${response.status} ${JSON.stringify(body)}`);
+          }
+          console.log("Worker database health endpoint returned connected from migrated local D1.");
+          NODE
+          then
+            cat "$RUNNER_TEMP/respondo-wrangler-dev.log"
+            exit 1
+          fi

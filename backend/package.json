@@ -1,0 +1,28 @@
+{
+  "name": "respondo-worker",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Cloudflare Worker API foundation for Respondo",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:migrate:local": "wrangler d1 migrations apply respondo-db --local",
+    "db:verify:local": "node scripts/verify-local-d1.mjs",
+    "db:migrate:remote": "wrangler d1 migrations apply respondo-db --remote",
+    "config:check": "wrangler types .wrangler/worker-configuration.d.ts",
+    "bundle:check": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.5",
+    "@cloudflare/workers-types": "^5.20261118.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.12",
+    "wrangler": "^4.165.0"
+  }
+}

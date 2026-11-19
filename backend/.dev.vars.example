@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local Worker variables. This file contains no secrets.
+ENVIRONMENT=development
+API_VERSION=1.0.0
+CORS_ALLOWED_ORIGINS=http://localhost:3000

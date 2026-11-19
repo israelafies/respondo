@@ -1,24 +1,26 @@
-name: Android build
+name: Respondo Android APK
 
 on:
   push:
     branches:
-      - "**"
-  pull_request:
+      - main
+      - master
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   build:
-    name: Compile, assemble, and test
+    name: Compile, test, and assemble debug APK
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
@@ -26,5 +28,39 @@ jobs:
       - name: Set up Gradle and dependency cache
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Compile, assemble, and run unit tests
-        run: ./gradlew :app:compileDebugSources :app:assembleDebug :app:testDebugUnitTest
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK platform and build tools
+        run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Validate wrapper and Android SDK configuration
+        shell: bash
+        run: |
+          test -x ./gradlew || { echo "::error::Gradle wrapper is missing or not executable."; exit 1; }
+          test -f gradle/wrapper/gradle-wrapper.jar || { echo "::error::Gradle wrapper JAR is missing."; exit 1; }
+          test -f gradle/wrapper/gradle-wrapper.properties || { echo "::error::Gradle wrapper properties are missing."; exit 1; }
+          : "${ANDROID_HOME:?Android SDK setup did not define ANDROID_HOME}"
+          test -d "$ANDROID_HOME/platforms/android-36" || { echo "::error::Android SDK platform 36 is not installed."; exit 1; }
+          test -d "$ANDROID_HOME/build-tools/35.0.0" || { echo "::error::Android build-tools 35.0.0 are not installed."; exit 1; }
+
+      - name: Compile, run unit tests, and assemble debug APK
+        run: ./gradlew --no-daemon :app:compileDebugSources :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v6
+        with:
+          name: Respondo-Android-Debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Report build failure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "## Android cloud build failed"
+            echo
+            echo "A required configuration, SDK component, dependency, compilation, test, or APK assembly step failed. Review the first failing step above."
+            echo "The APK artifact is uploaded only after all preceding build steps succeed."
+          } >> "$GITHUB_STEP_SUMMARY"
