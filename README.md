@@ -28,3 +28,11 @@ The app has no AI provider or messaging integrations yet. Keep future business r
 ## Cloud backend
 
 The `backend/` directory contains a separate Cloudflare Worker API and D1 schema foundation. Android Room remains the local database; Android cloud requests will go through the Worker, and no Room data is synchronized by this milestone. See [backend/README.md](backend/README.md) for local setup, migrations, endpoints, security boundaries, and deployment prerequisites. The Worker and D1 database have not been deployed remotely.
+
+## Android backend connection
+
+The Android app uses a Retrofit/OkHttp API repository for the Worker health, system information, and D1 connectivity endpoints. Requests run off the main thread with bounded timeouts. The app displays a small backend status indicator; Android network connectivity and Worker reachability are reported separately. When offline, Room-based prospect, offer profile, and campaign features continue to work locally. No user records are sent to the backend.
+
+Configure the base URL at build time, with a trailing slash, using `-PrespondoBackendEnvironment=development|staging|production` and the matching `-PrespondoDevelopmentBackendUrl`, `-PrespondoStagingBackendUrl`, or `-PrespondoProductionBackendUrl` Gradle property. Matching environment variables are also supported: `RESPONDO_BACKEND_ENVIRONMENT` and `RESPONDO_<ENV>_BACKEND_URL`. For example, use your own deployed HTTPS Worker URL; no URL is bundled by default. Production URLs must use HTTPS. These values are public endpoint configuration, not credentials. Missing configuration is shown in the app and does not disable local features.
+
+Authentication and cloud synchronization are not implemented. Future authenticated requests belong at the shared HTTP client interceptor/authenticator boundary and must be backed by real account/session APIs. A future sync repository can be added alongside the local Room repositories; this milestone does not upload prospect, conversation, campaign, or offer data.

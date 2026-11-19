@@ -18,18 +18,31 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Gradle and dependency cache
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
       - name: Install Android platform
         run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
 
-      - name: Build debug APK
-        run: ./gradlew --no-daemon :app:assembleDebug
+      - name: Validate Gradle wrapper and Android SDK
+        shell: bash
+        run: |
+          test -x ./gradlew || { echo "::error::Gradle wrapper is missing or not executable."; exit 1; }
+          test -f gradle/wrapper/gradle-wrapper.jar || { echo "::error::Gradle wrapper JAR is missing."; exit 1; }
+          test -f gradle/wrapper/gradle-wrapper.properties || { echo "::error::Gradle wrapper properties are missing."; exit 1; }
+          : "${ANDROID_HOME:?Android SDK setup did not define ANDROID_HOME}"
+          test -d "$ANDROID_HOME/platforms/android-36" || { echo "::error::Android SDK platform 36 is not installed."; exit 1; }
+          test -d "$ANDROID_HOME/build-tools/35.0.0" || { echo "::error::Android build-tools 35.0.0 are not installed."; exit 1; }
+
+      - name: Compile, run unit tests, and assemble debug APK
+        run: ./gradlew --no-daemon :app:compileDebugSources :app:testDebugUnitTest :app:assembleDebug
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v6
         with:
-          name: respondo-debug-apk
+          name: Respondo-Milestone-3-Debug-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error

@@ -23,6 +23,9 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,6 +33,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.respondo.app.BuildConfig
+import com.respondo.data.cloud.AndroidConnectivityMonitor
+import com.respondo.data.cloud.CloudApiRepository
+import com.respondo.data.cloud.CloudNetworking
+import com.respondo.data.cloud.RetrofitCloudApiRepository
+import com.respondo.ui.cloud.CloudConnectionStatus
+import com.respondo.ui.cloud.CloudConnectionViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +75,27 @@ fun RespondoApp() {
     val prospectState by prospectViewModel.uiState.collectAsState()
     val offerViewModel: OfferProfileViewModel = viewModel()
     val campaignViewModel: CampaignViewModel = viewModel()
+    val context = LocalContext.current
+    val cloudFactory = remember(context) {
+        val service = CloudNetworking.service(BuildConfig.RESPONDO_BACKEND_BASE_URL)
+        val repository: CloudApiRepository = RetrofitCloudApiRepository(service)
+        val configured = BuildConfig.RESPONDO_BACKEND_BASE_URL.isNotBlank()
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(CloudConnectionViewModel::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return CloudConnectionViewModel(
+                        repository,
+                        AndroidConnectivityMonitor(context),
+                        configured,
+                    ) as T
+                }
+                error("Unknown ViewModel: ${modelClass.name}")
+            }
+        }
+    }
+    val cloudViewModel: CloudConnectionViewModel = viewModel(factory = cloudFactory)
+    val cloudState by cloudViewModel.state.collectAsState()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -94,7 +127,8 @@ fun RespondoApp() {
         ) {
             Spacer(Modifier.height(20.dp))
             BrandHeader()
-            Spacer(Modifier.height(34.dp))
+            CloudConnectionIndicator(cloudState.status, onRetry = cloudViewModel::retry)
+            Spacer(Modifier.height(10.dp))
             when (selected) {
                 "Dashboard" -> DashboardContent(prospectCount = prospectState.totalCount, onAddProspect = {
                     openAddProspectOnEntry = true
@@ -108,6 +142,31 @@ fun RespondoApp() {
                 "Offer Profiles" -> OfferProfilesScreen(modifier = Modifier.weight(1f), viewModel = offerViewModel)
                 "Campaigns" -> CampaignsScreen(modifier = Modifier.weight(1f), viewModel = campaignViewModel)
                 else -> FeaturePlaceholder(selected)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CloudConnectionIndicator(status: CloudConnectionStatus, onRetry: () -> Unit) {
+    val (label, tint) = when (status) {
+        CloudConnectionStatus.NOT_CONFIGURED -> "Backend not configured" to MaterialTheme.colorScheme.onSurfaceVariant
+        CloudConnectionStatus.OFFLINE -> "Offline" to MaterialTheme.colorScheme.onSurfaceVariant
+        CloudConnectionStatus.CONNECTING -> "Connecting" to MaterialTheme.colorScheme.primary
+        CloudConnectionStatus.CONNECTED -> "Connected" to MaterialTheme.colorScheme.primary
+        CloudConnectionStatus.SERVER_UNAVAILABLE -> "Server unavailable" to MaterialTheme.colorScheme.error
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(7.dp).clip(CircleShape).background(tint))
+        Spacer(Modifier.width(7.dp))
+        Text(label, color = tint, fontSize = 11.sp)
+        Spacer(Modifier.weight(1f))
+        if (status == CloudConnectionStatus.SERVER_UNAVAILABLE) {
+            TextButton(onClick = onRetry, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
+                Text("Check", fontSize = 11.sp)
             }
         }
     }

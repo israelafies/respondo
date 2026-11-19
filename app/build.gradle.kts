@@ -5,6 +5,29 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+val backendEnvironment = providers.gradleProperty("respondoBackendEnvironment")
+    .orElse(providers.environmentVariable("RESPONDO_BACKEND_ENVIRONMENT"))
+    .orElse("development")
+    .get()
+    .lowercase()
+require(backendEnvironment in setOf("development", "staging", "production")) {
+    "respondoBackendEnvironment must be development, staging, or production"
+}
+val backendUrlProperty = "respondo${backendEnvironment.replaceFirstChar { it.uppercase() }}BackendUrl"
+val backendUrlEnvironment = "RESPONDO_${backendEnvironment.uppercase()}_BACKEND_URL"
+val backendBaseUrl = providers.gradleProperty(backendUrlProperty)
+    .orElse(providers.environmentVariable(backendUrlEnvironment))
+    .orElse("")
+    .get()
+    .trim()
+if (backendBaseUrl.isNotEmpty()) {
+    val parsedUrl = java.net.URI(backendBaseUrl)
+    require(parsedUrl.scheme == "https" && parsedUrl.host != null && parsedUrl.userInfo == null &&
+        parsedUrl.query == null && parsedUrl.fragment == null && backendBaseUrl.endsWith("/")) {
+        "Configured backend URL must be an HTTPS origin/base path ending in /, without credentials, query, or fragment"
+    }
+}
+
 android {
     namespace = "com.respondo.app"
     compileSdk = 36
@@ -16,10 +39,13 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "RESPONDO_BACKEND_ENVIRONMENT", "\"$backendEnvironment\"")
+        buildConfigField("String", "RESPONDO_BACKEND_BASE_URL", "\"$backendBaseUrl\"")
     }
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -51,10 +77,14 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.3")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
+    implementation("com.squareup.retrofit2:converter-gson:3.0.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.1")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("androidx.room:room-testing:2.7.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.1")
     androidTestImplementation("androidx.test:core-ktx:1.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
