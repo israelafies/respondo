@@ -1,3 +1,5 @@
+import java.net.URI
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -21,7 +23,7 @@ val backendBaseUrl = providers.gradleProperty(backendUrlProperty)
     .get()
     .trim()
 if (backendBaseUrl.isNotEmpty()) {
-    val parsedUrl = java.net.URI(backendBaseUrl)
+    val parsedUrl = URI(backendBaseUrl)
     require(parsedUrl.scheme == "https" && parsedUrl.host != null && parsedUrl.userInfo == null &&
         parsedUrl.query == null && parsedUrl.fragment == null && backendBaseUrl.endsWith("/")) {
         "Configured backend URL must be an HTTPS origin/base path ending in /, without credentials, query, or fragment"
